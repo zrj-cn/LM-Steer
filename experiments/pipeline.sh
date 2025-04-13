@@ -1,19 +1,27 @@
+# ./experiments/pipeline.sh {第一个参数（必须）} {第二个参数（可选）}
+# 第一个参数说明：
+# 0：执行第0部分（准备数据）
+# 1：执行第1部分（训练）
+# 2：执行第2部分（生成）
+# -1：执行所有部分
+# 第二个参数说明：
+# （可选）针对第二部分代码，指定生成的样本数量，如果不指定则使用原始的10k样本文件
 # 检查是否提供了参数
 if [ $# -eq 0 ]; then
-    echo "请提供执行部分的参数（0,1,2 或 -1）"
+    echo "请提供执行部分的第一个参数（0,1,2 或 -1）"
     exit 1
 fi
 
 PART=$1
 TRIAL=detoxification-gpt2-large
 
-# 执行第0部分
+# 执行第0部分，创建logs文件夹
 if [ $PART -eq 0 ] || [ $PART -eq -1 ]; then
     echo "执行第0部分..."
     mkdir -p logs/$TRIAL
 fi
 
-# 执行第1部分
+# 执行第1部分，训练模型
 if [ $PART -eq 1 ] || [ $PART -eq -1 ]; then
     echo "执行第1部分..."
     PYTHONPATH=. python experiments/training/train.py \
@@ -26,14 +34,38 @@ if [ $PART -eq 1 ] || [ $PART -eq -1 ]; then
         --n_steps 1000 --lr 1e-2
 fi
 
-# 执行第2部分
+# 执行第2部分，生成
 if [ $PART -eq 2 ] || [ $PART -eq -1 ]; then
     echo "执行第2部分..."
-    PYTHONPATH=. python experiments/training/generate.py \
-        --eval_file data/prompts/nontoxic_prompts-10k.jsonl \
-        --output_file logs/$TRIAL/predictions.jsonl \
-        --ckpt_name logs/$TRIAL/checkpoint.pt \
-        --model gpt2-large --cuda \
-        --adaptor_class multiply --num_steers 2 --rank 1000 \
-        --max_length 256 --verbose --steer_values 5 1
+    
+    # 获取第二个参数（样本数量）
+    NUM_SAMPLES=$2
+    
+    # 如果指定了样本数量
+    if [ ! -z "$NUM_SAMPLES" ]; then
+        echo "生成 $NUM_SAMPLES 个样本..."
+        # 执行采样脚本
+        PYTHONPATH=. python data/prompts/sample_prompts.py \
+            --num_samples $NUM_SAMPLES \
+            --input_file data/prompts/nontoxic_prompts-10k.jsonl \
+            --output_file data/prompts/nontoxic_prompts/nontoxic_prompts-$NUM_SAMPLES.jsonl
+        
+        # 使用生成的样本文件进行生成
+        PYTHONPATH=. python experiments/training/generate.py \
+            --eval_file data/prompts/nontoxic_prompts/nontoxic_prompts-$NUM_SAMPLES.jsonl \
+            --output_file logs/$TRIAL/predictions-$NUM_SAMPLES.jsonl \
+            --ckpt_name logs/$TRIAL/checkpoint.pt \
+            --model gpt2-large --cuda \
+            --adaptor_class multiply --num_steers 2 --rank 1000 \
+            --max_length 256 --verbose --steer_values 5 1
+    else
+        # 若未指定采样，使用原始的10k样本文件
+        PYTHONPATH=. python experiments/training/generate.py \
+            --eval_file data/prompts/nontoxic_prompts-10k.jsonl \
+            --output_file logs/$TRIAL/predictions.jsonl \
+            --ckpt_name logs/$TRIAL/checkpoint.pt \
+            --model gpt2-large --cuda \
+            --adaptor_class multiply --num_steers 2 --rank 1000 \
+            --max_length 256 --verbose --steer_values 5 1
+    fi
 fi
