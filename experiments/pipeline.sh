@@ -3,6 +3,7 @@
 # 0：执行第0部分（准备数据）
 # 1：执行第1部分（训练）
 # 2：执行第2部分（生成）
+# 3：执行第3部分（评估）
 # -1：执行所有部分
 # 第二个参数说明：
 # （可选）针对第二部分代码，指定生成的样本数量，如果不指定则使用原始的10k样本文件
@@ -68,4 +69,28 @@ if [ $PART -eq 2 ] || [ $PART -eq -1 ]; then
             --adaptor_class multiply --num_steers 2 --rank 1000 \
             --max_length 256 --verbose --steer_values 5 1
     fi
+fi
+
+# 执行第3部分，评估
+if [ $PART -eq 3 ] || [ $PART -eq -1 ]; then
+    echo "执行第3部分..."
+    
+    # 获取第二个参数（样本数量）
+    NUM_SAMPLES=$2
+    
+    # 根据是否指定样本数量选择对应的预测文件和结果文件
+    if [ ! -z "$NUM_SAMPLES" ]; then
+        PRED_FILE="logs/$TRIAL/predictions-$NUM_SAMPLES.jsonl"
+        RESULT_FILE="logs/$TRIAL/result_stats-$NUM_SAMPLES.txt"
+    else
+        PRED_FILE="logs/$TRIAL/predictions.jsonl"
+        RESULT_FILE="logs/$TRIAL/result_stats.txt"
+    fi
+    
+    python experiments/evaluation/evaluate.py \
+        --generations_file $PRED_FILE \
+        --metrics toxicity,ppl-big,dist-n \
+        --output_file $RESULT_FILE
+    echo "Detoxification results:"
+    cat $RESULT_FILE
 fi
