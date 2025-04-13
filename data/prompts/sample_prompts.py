@@ -1,8 +1,15 @@
 import json
 import random
 import argparse
+import os
 
 def sample_prompts(input_file, output_file, num_samples):
+    # 检查并创建输出目录
+    output_dir = os.path.dirname(output_file)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        print(f"已创建目录：{output_dir}")
+    
     # 读取所有提示
     with open(input_file, 'r', encoding='utf-8') as f:
         prompts = [line for line in f]
@@ -32,9 +39,9 @@ if __name__ == "__main__":
     
     # 如果没有指定输出文件名，则自动生成
     if args.output_file is None:
-        args.output_file = f'./data/prompts/nontoxic_prompts-{args.num_samples}.jsonl'
+        args.output_file = f'./data/prompts/nontoxic_prompts/nontoxic_prompts-{args.num_samples}.jsonl'
     else:
         # 如果指定了输出文件名，确保它在正确的目录下
-        args.output_file = f'./data/prompts/{args.output_file}'
+        args.output_file = f'./data/prompts/nontoxic_prompts/{args.output_file}'
     
     sample_prompts(args.input_file, args.output_file, args.num_samples)
