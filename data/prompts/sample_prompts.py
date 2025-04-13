@@ -1,3 +1,4 @@
+# 这个代码可以根据pipeline的输入输出文件，生成文件储存目录，并随机抽取一定数量的prompt，生成新的prompt文件。
 import json
 import random
 import argparse
