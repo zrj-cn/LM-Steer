@@ -37,11 +37,4 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    # 如果没有指定输出文件名，则自动生成
-    if args.output_file is None:
-        args.output_file = f'./data/prompts/nontoxic_prompts/nontoxic_prompts-{args.num_samples}.jsonl'
-    else:
-        # 如果指定了输出文件名，确保它在正确的目录下
-        args.output_file = f'./data/prompts/nontoxic_prompts/{args.output_file}'
-    
     sample_prompts(args.input_file, args.output_file, args.num_samples)
