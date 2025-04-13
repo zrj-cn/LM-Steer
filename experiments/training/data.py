@@ -4,13 +4,14 @@ from datasets import load_dataset as load_huggingface_dataset
 
 
 def load_toxicity_data(data_dir, subset):
+    # train_0.jsonl 是正例，train_1.jsonl 是负例
     with open(os.path.join(data_dir, "train_0.jsonl"), "r") as f:
-        neg_data = list(map(json.loads, f.readlines()))
-        for _datum in neg_data:
-            _datum["label"] = 1
-    with open(os.path.join(data_dir, "train_1.jsonl"), "r") as f:
         pos_data = list(map(json.loads, f.readlines()))
         for _datum in pos_data:
+            _datum["label"] = 1
+    with open(os.path.join(data_dir, "train_1.jsonl"), "r") as f:
+        neg_data = list(map(json.loads, f.readlines()))
+        for _datum in neg_data:
             _datum["label"] = -1
 
     if subset is not None:
