@@ -9,7 +9,7 @@
 # （可选）针对第二部分代码，指定生成的样本数量，如果不指定则使用原始的10k样本文件
 # 检查是否提供了参数
 if [ $# -eq 0 ]; then
-    echo "请提供执行部分的第一个参数（0,1,2 或 -1）"
+    echo "请提供执行部分的第一个参数（0、1、2、3或-1）"
     exit 1
 fi
 
@@ -24,7 +24,7 @@ fi
 
 # 执行第1部分，训练模型
 if [ $PART -eq 1 ] || [ $PART -eq -1 ]; then
-    echo "执行第1部分..."
+    echo "执行第1部分，训练模型..."
     PYTHONPATH=. python experiments/training/train.py \
         --dataset_name toxicity \
         --data_dir data/toxicity/jigsaw-unintended-bias-in-toxicity-classification \
@@ -37,7 +37,7 @@ fi
 
 # 执行第2部分，生成
 if [ $PART -eq 2 ] || [ $PART -eq -1 ]; then
-    echo "执行第2部分..."
+    echo "执行第2部分，生成语句..."
     
     # 获取第二个参数（样本数量）
     NUM_SAMPLES=$2
@@ -73,7 +73,7 @@ fi
 
 # 执行第3部分，评估
 if [ $PART -eq 3 ] || [ $PART -eq -1 ]; then
-    echo "执行第3部分..."
+    echo "执行第3部分，评估效果..."
     
     # 获取第二个参数（样本数量）
     NUM_SAMPLES=$2
