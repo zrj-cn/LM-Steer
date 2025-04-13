@@ -15,6 +15,7 @@ def main(args):
     train_data = load_dataset(args.dataset_name, args.data_dir, args.subset)
     dataloader = DataLoader(
         train_data, batch_size=args.batch_size,
+        # 打乱数据
         shuffle=True)
     data_iter = iter(dataloader)
 

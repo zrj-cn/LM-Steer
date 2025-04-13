@@ -22,10 +22,19 @@ def load_toxicity_data(data_dir, subset):
 
 
 def load_sentiment_data(dataset_name):
+    '''
+    1. sentiment-sst2，原始标签0，1
+    2. sentiment-yelp，原始标签1-5
+    3. sentiment-sst5，原始标签0-4
+    4. sentiment-sst5-positive，原始标签1
+    5. sentiment-sst5-negative，原始标签0
+    '''
     dataset = []
+    # 代码处理 SST-2（Stanford Sentiment Treebank）情感分析数据集
     if dataset_name in ["sentiment-sst2", "sentiment-all"]:
         sst2 = list(load_huggingface_dataset("sst2")["train"])
         for _datum in sst2:
+            # 转换标签为 -1 和 1，与其他数据集保持一致
             _datum["label"] = _datum["label"] * 2 - 1
             _datum["text"] = _datum["sentence"]
             _datum.pop("idx")
@@ -37,6 +46,7 @@ def load_sentiment_data(dataset_name):
             _datum["label"] = _datum["label"] / 2.5 - 1
         dataset.extend(yelp)
     if dataset_name == "sentiment-sst5":
+        # 映射后的label好像不太对，映射成了-1，-0.5，0，0.5，1，与论文中的不太一样
         sst5 = list(load_huggingface_dataset("SetFit/sst5")["train"])
         for _datum in sst5:
             _datum["label"] = _datum["label"] / 2 - 1
@@ -44,7 +54,9 @@ def load_sentiment_data(dataset_name):
         dataset.extend(sst5)
     elif dataset_name == "sentiment-sst5-positive":
         sst5 = list(load_huggingface_dataset("SetFit/sst5")["train"])
-        sst5 = [d for d in sst5 if d["label"] == 1]
+        # 原始代码有点问题，这里应该是 d["label"] == 4
+        # sst5 = [d for d in sst5 if d["label"] == 1]
+        sst5 = [d for d in sst5 if d["label"] == 4]
         for _datum in sst5:
             _datum["label"] = _datum["label"] / 2 - 1
             _datum.pop("label_text")
@@ -75,7 +87,7 @@ def load_toy_sentiment_data(dataset_name):
     }[dataset_name]
     return dataset
 
-
+# load dataset from data_dir or huggingface hub
 def load_dataset(dataset_name, data_dir, subset):
     if dataset_name == "toxicity":
         dataset = load_toxicity_data(data_dir, subset)
