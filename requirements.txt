@@ -7,3 +7,4 @@ nltk
 # new requirements
 kaggle
 matplotlib
+hf_xet
