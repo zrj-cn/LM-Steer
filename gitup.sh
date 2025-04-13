@@ -1,5 +1,6 @@
 #!/bin/bash
-
+# 只有在autodl上才使用下一句指令
+source /etc/network_turbo
 # 检查是否提供了参数
 if [ $# -eq 0 ]; then
     echo "请提供执行部分的参数（1 或 2）"
