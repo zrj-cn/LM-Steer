@@ -85,10 +85,10 @@ if [ $PART -eq 3 ] || [ $PART -eq -1 ]; then
     # 根据是否指定样本数量选择对应的预测文件和结果文件
     if [ ! -z "$NUM_SAMPLES" ]; then
         PRED_FILE="logs/$TRIAL/predictions-$NUM_SAMPLES.jsonl"
-        RESULT_FILE="logs/$TRIAL/result_stats-$NUM_SAMPLES.txt"
+        RESULT_FILE="result_stats-$NUM_SAMPLES.txt"
     else
         PRED_FILE="logs/$TRIAL/predictions.jsonl"
-        RESULT_FILE="logs/$TRIAL/result_stats.txt"
+        RESULT_FILE="result_stats.txt"
     fi
     
     python experiments/evaluation/evaluate.py \
@@ -96,5 +96,5 @@ if [ $PART -eq 3 ] || [ $PART -eq -1 ]; then
         --metrics toxicity,ppl-big,dist-n \
         --output_file $RESULT_FILE
     echo "Detoxification results:"
-    cat $RESULT_FILE
+    cat logs/$TRIAL/$RESULT_FILE
 fi
