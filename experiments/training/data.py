@@ -23,9 +23,9 @@ def load_toxicity_data(data_dir, subset):
 
 def load_sentiment_data(dataset_name):
     '''
-    1. sentiment-sst2，原始标签0，1
-    2. sentiment-yelp，原始标签1-5
-    3. sentiment-sst5，原始标签0-4
+    1. sentiment-sst2，原始标签0，1，映射成 -1 和 1
+    2. sentiment-yelp，原始标签1-5,映射关系有点混乱
+    3. sentiment-sst5，原始标签0-4，映射成-1,-0.5,0,0.5,1，与论文中的不太一样
     4. sentiment-sst5-positive，原始标签1
     5. sentiment-sst5-negative，原始标签0
     '''
