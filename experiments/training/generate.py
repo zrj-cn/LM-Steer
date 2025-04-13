@@ -44,7 +44,14 @@ def main(args):
         args.rank, args.epsilon, args.init_var, args.low_resource_mode)
     model.to_device(device)
 
-    ckpt = torch.load(args.ckpt_name)
+    # 修改这行
+    # ckpt = torch.load(args.ckpt_name)
+    
+    # 改为
+    from torch.serialization import add_safe_globals
+    from argparse import Namespace
+    add_safe_globals([Namespace])
+    ckpt = torch.load(args.ckpt_name, weights_only=False)
     model.load_state_dict(ckpt[1])
 
     # predicting sentences

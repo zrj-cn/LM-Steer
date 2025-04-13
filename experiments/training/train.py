@@ -39,6 +39,7 @@ def main(args):
     pbar = tqdm(range(start_step, args.n_steps))
     loss_mean = RunningMean(args.gamma_mean)
     scaler = torch.cuda.amp.GradScaler()
+    # scaler = torch.amp.GradScaler('cuda')
 
     for step_i in pbar:
         batch = next(data_iter, None)
