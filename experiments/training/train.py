@@ -9,8 +9,6 @@ from lm_steer.models.get_model import get_model
 from lm_steer.utils import RunningMean
 
 from data import load_dataset
-from argparse import Namespace
-from torch.serialization import add_safe_globals
 
 
 def main(args):
@@ -31,11 +29,7 @@ def main(args):
     print("number of training steps:", args.n_steps)
     start_step = 0
     if os.path.exists(args.ckpt_name):
-        # 添加 Namespace 到安全全局变量列表
-        add_safe_globals([Namespace])
-        
-        # 加载检查点
-        ckpt = torch.load(args.ckpt_name)
+        ckpt = torch.load(args.ckpt_name, weights_only=False)
         model.load_state_dict(ckpt[1])
         start_step = ckpt[2]
         print(f"resume training from {start_step}")
