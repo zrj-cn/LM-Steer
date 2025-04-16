@@ -20,6 +20,8 @@ TRIAL=detoxification-$TRIAN_MODEL
 # ======sentiment parameters=============
 source=positive
 control=-5
+
+# ================detoxification part==========================
 # ========================================================
 # 执行第0部分，创建logs文件夹
 if [ $PART -eq 0 ] || [ $PART -eq -1 ]; then
@@ -114,4 +116,27 @@ if [ $PART -eq 4 ] || [ $PART -eq -1 ]; then
         --adaptor_class multiply --num_steers 2 --dummy_steer 1 --rank 1000 \
         --batch_size 32 --max_length 256 \
         --n_steps 1000 --lr 1e-2 --regularization 1e-6 --epsilon 1e-3
+fi
+
+# ========================================================
+# 执行第5部分，训练模型
+if [ $PART -eq 5 ] || [ $PART -eq -1 ]; then
+    PYTHONPATH=. python experiments/training/generate.py \
+    --eval_file data/prompts/sentiment_prompts-10k/${source}_prompts.jsonl \
+    --output_file logs/$TRIAL/predictions-${source}_${control}.jsonl \
+    --ckpt_name logs/$TRIAL/checkpoint.pt \
+    --model $TRIAN_MODEL --cuda \
+    --adaptor_class multiply --num_steers 2 --rank 1000 \
+    --max_length 256 --verbose --steer_values ${control} 1 --top_p 0.9
+fi
+
+# ========================================================
+# 执行第6部分，评估模型
+if [ $PART -eq 6 ] || [ $PART -eq -1 ]; then
+    python experiments/evaluation/evaluate.py \
+        --generations_file logs/$TRIAL/predictions-${source}_${control}.jsonl \
+        --metrics sentiment,ppl-big,dist-n \
+        --output_file result_stats_${source}_${control}.txt
+    echo "Sentiment control results:"
+    cat logs/$TRIAL/result_stats_${source}_${control}.txt
 fi
