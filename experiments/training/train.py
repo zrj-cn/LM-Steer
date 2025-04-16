@@ -38,8 +38,8 @@ def main(args):
 
     pbar = tqdm(range(start_step, args.n_steps))
     loss_mean = RunningMean(args.gamma_mean)
-    scaler = torch.cuda.amp.GradScaler()
-    # scaler = torch.amp.GradScaler('cuda')
+    scaler = torch.amp.GradScaler('cuda')
+    # 移除旧的注释行，因为我们现在使用新的语法
 
     for step_i in pbar:
         batch = next(data_iter, None)
