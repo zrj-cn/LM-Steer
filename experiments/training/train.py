@@ -29,7 +29,7 @@ def main(args):
     print("number of training steps:", args.n_steps)
     start_step = 0
     if os.path.exists(args.ckpt_name):
-        ckpt = torch.load(args.ckpt_name, weights_only=False)
+        ckpt = torch.load(args.ckpt_name)
         model.load_state_dict(ckpt[1])
         start_step = ckpt[2]
         print(f"resume training from {start_step}")
@@ -38,8 +38,8 @@ def main(args):
 
     pbar = tqdm(range(start_step, args.n_steps))
     loss_mean = RunningMean(args.gamma_mean)
-    scaler = torch.amp.GradScaler('cuda')
-    # 移除旧的注释行，因为我们现在使用新的语法
+    scaler = torch.cuda.amp.GradScaler()
+    # scaler = torch.amp.GradScaler('cuda')
 
     for step_i in pbar:
         batch = next(data_iter, None)
