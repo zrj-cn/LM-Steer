@@ -30,23 +30,22 @@ def main(args):
     start_step = 0
     if os.path.exists(args.ckpt_name):
         try:
-            # 方案1：使用 weights_only=False
             ckpt = torch.load(args.ckpt_name, weights_only=False)
         except:
-            # 如果上面失败，尝试方案2：添加安全全局变量
             from argparse import Namespace
             torch.serialization.add_safe_globals([Namespace])
             ckpt = torch.load(args.ckpt_name, weights_only=True)
         model.load_state_dict(ckpt[1])
-        start_step = ckpt[2]
+        # 修改这里，确保 start_step 不会等于或超过 n_steps
+        start_step = min(ckpt[2], args.n_steps - 1)
         print(f"resume training from {start_step}")
     if args.optimizer == "Adam":
         optimizer = Adam(model.parameters(), lr=args.lr)
 
     pbar = tqdm(range(start_step, args.n_steps))
     loss_mean = RunningMean(args.gamma_mean)
-    scaler = torch.cuda.amp.GradScaler()
-    # scaler = torch.amp.GradScaler('cuda')
+    # 更新 GradScaler 的使用方式
+    scaler = torch.amp.GradScaler('cuda')
 
     for step_i in pbar:
         batch = next(data_iter, None)
