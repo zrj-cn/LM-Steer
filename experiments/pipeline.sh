@@ -92,7 +92,7 @@ if [ $PART -eq 3 ] || [ $PART -eq -1 ]; then
         RESULT_FILE="result_stats.txt"
     fi
     
-    python experiments/evaluation/evaluate.py \
+    python experiments/evaluation/evaluate2.py \
         --generations_file $PRED_FILE \
         --metrics toxicity,ppl-big,dist-n \
         --output_file $RESULT_FILE
