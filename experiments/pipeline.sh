@@ -14,7 +14,8 @@ if [ $# -eq 0 ]; then
 fi
 
 PART=$1
-TRIAL=detoxification-gpt2-large
+TRIAN_MODEL=gpt2-large
+TRIAL=detoxification-$TRIAN_MODEL
 
 # ========================================================
 # 执行第0部分，创建logs文件夹
@@ -59,7 +60,7 @@ if [ $PART -eq 2 ] || [ $PART -eq -1 ]; then
             --eval_file data/prompts/nontoxic_prompts/nontoxic_prompts-$NUM_SAMPLES.jsonl \
             --output_file logs/$TRIAL/predictions-$NUM_SAMPLES.jsonl \
             --ckpt_name logs/$TRIAL/checkpoint.pt \
-            --model gpt2-large --cuda \
+            --model $TRIAN_MODEL --cuda \
             --adaptor_class multiply --num_steers 2 --rank 1000 \
             --max_length 256 --verbose --steer_values 5 1
     else
@@ -68,7 +69,7 @@ if [ $PART -eq 2 ] || [ $PART -eq -1 ]; then
             --eval_file data/prompts/nontoxic_prompts-10k.jsonl \
             --output_file logs/$TRIAL/predictions.jsonl \
             --ckpt_name logs/$TRIAL/checkpoint.pt \
-            --model gpt2-large --cuda \
+            --model $TRIAN_MODEL --cuda \
             --adaptor_class multiply --num_steers 2 --rank 1000 \
             --max_length 256 --verbose --steer_values 5 1
     fi
