@@ -29,7 +29,14 @@ def main(args):
     print("number of training steps:", args.n_steps)
     start_step = 0
     if os.path.exists(args.ckpt_name):
-        ckpt = torch.load(args.ckpt_name)
+        try:
+            # 方案1：使用 weights_only=False
+            ckpt = torch.load(args.ckpt_name, weights_only=False)
+        except:
+            # 如果上面失败，尝试方案2：添加安全全局变量
+            from argparse import Namespace
+            torch.serialization.add_safe_globals([Namespace])
+            ckpt = torch.load(args.ckpt_name, weights_only=True)
         model.load_state_dict(ckpt[1])
         start_step = ckpt[2]
         print(f"resume training from {start_step}")
