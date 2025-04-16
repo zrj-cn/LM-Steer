@@ -9,14 +9,17 @@
 # （可选）针对第二部分代码，指定生成的样本数量，如果不指定则使用原始的10k样本文件
 # 检查是否提供了参数
 if [ $# -eq 0 ]; then
-    echo "请提供执行部分的第一个参数（0、1、2、3或-1）"
+    echo "请提供执行部分的第一个参数（0、1、2、3、4或-1）"
     exit 1
 fi
 
 PART=$1
 TRIAN_MODEL=gpt2-large
+# ======detoxicity parameters=============
 TRIAL=detoxification-$TRIAN_MODEL
-
+# ======sentiment parameters=============
+source=positive
+control=-5
 # ========================================================
 # 执行第0部分，创建logs文件夹
 if [ $PART -eq 0 ] || [ $PART -eq -1 ]; then
@@ -98,4 +101,17 @@ if [ $PART -eq 3 ] || [ $PART -eq -1 ]; then
         --output_file $RESULT_FILE
     echo "Detoxification results:"
     cat logs/$TRIAL/$RESULT_FILE
+fi
+
+# ================sentiment part==========================
+# ========================================================
+# 执行第4部分，训练模型
+if [ $PART -eq 4 ] || [ $PART -eq -1 ]; then
+    PYTHONPATH=. python experiments/training/train.py \
+        --dataset_name sentiment-sst5 \
+        --ckpt_name logs/$TRIAL/checkpoint.pt \
+        --model $TRIAN_MODEL --cuda \
+        --adaptor_class multiply --num_steers 2 --dummy_steer 1 --rank 1000 \
+        --batch_size 32 --max_length 256 \
+        --n_steps 1000 --lr 1e-2 --regularization 1e-6 --epsilon 1e-3
 fi
