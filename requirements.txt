@@ -8,3 +8,4 @@ nltk
 kaggle
 matplotlib
 hf_xet
+google-api-python-client
