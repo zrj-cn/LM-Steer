@@ -36,12 +36,9 @@ def main(args):
             torch.serialization.add_safe_globals([Namespace])
             ckpt = torch.load(args.ckpt_name, weights_only=True)
         model.load_state_dict(ckpt[1])
-        # Reset start_step to 0 to ensure full training
-        start_step = 0
+        # 删除冲突的 start_step 设置，只保留一个
+        start_step = 0  # 从头开始训练
         print(f"Loaded checkpoint, starting fresh training from step 0")
-        # 修改这里，确保 start_step 不会等于或超过 n_steps
-        start_step = min(ckpt[2], args.n_steps - 1)
-        print(f"resume training from {start_step}")
     if args.optimizer == "Adam":
         optimizer = Adam(model.parameters(), lr=args.lr)
 
