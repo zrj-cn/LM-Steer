@@ -127,7 +127,9 @@ def toxicity_score(generations_df, perspective_file, perspective_rate_limit=5):
     assert API_KEY is not None, "Please set the GOOGLE_API_KEY environment variable before proceeding"
     # 将信号量限制改为3
     request_semaphore = Semaphore(2)
+
     
+    #====================
     @backoff.on_exception(backoff.expo, requests.exceptions.RequestException, max_tries=5)
     def analyze_text(text):
         url = "https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze"
