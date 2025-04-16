@@ -32,7 +32,7 @@ if [ $PART -eq 1 ] || [ $PART -eq -1 ]; then
         --dataset_name toxicity \
         --data_dir data/toxicity/jigsaw-unintended-bias-in-toxicity-classification \
         --ckpt_name logs/$TRIAL/checkpoint.pt \
-        --model gpt2-large --cuda \
+        --model $TRIAN_MODEL --cuda \
         --adaptor_class multiply --num_steers 2 --dummy_steer 1 --rank 1000 \
         --batch_size 32 --max_length 256 \
         --n_steps 1000 --lr 1e-2
