@@ -109,6 +109,8 @@ fi
 # ========================================================
 # 执行第4部分，训练模型
 if [ $PART -eq 4 ] || [ $PART -eq -1 ]; then
+    TRIAL=sentiment-$TRIAN_MODEL
+    mkdir -p logs/$TRIAL
     PYTHONPATH=. python experiments/training/train.py \
         --dataset_name sentiment-sst5 \
         --ckpt_name logs/$TRIAL/checkpoint.pt \
@@ -119,8 +121,9 @@ if [ $PART -eq 4 ] || [ $PART -eq -1 ]; then
 fi
 
 # ========================================================
-# 执行第5部分，训练模型
+# 执行第5部分，生成
 if [ $PART -eq 5 ] || [ $PART -eq -1 ]; then
+    TRIAL=sentiment-$TRIAN_MODEL
     PYTHONPATH=. python experiments/training/generate.py \
     --eval_file data/prompts/sentiment_prompts-10k/${source}_prompts.jsonl \
     --output_file logs/$TRIAL/predictions-${source}_${control}.jsonl \
@@ -133,6 +136,7 @@ fi
 # ========================================================
 # 执行第6部分，评估模型
 if [ $PART -eq 6 ] || [ $PART -eq -1 ]; then
+    TRIAL=sentiment-$TRIAN_MODEL
     python experiments/evaluation/evaluate.py \
         --generations_file logs/$TRIAL/predictions-${source}_${control}.jsonl \
         --metrics sentiment,ppl-big,dist-n \
