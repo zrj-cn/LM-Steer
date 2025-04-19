@@ -144,3 +144,67 @@ if [ $PART -eq 6 ] || [ $PART -eq -1 ]; then
     echo "Sentiment control results:"
     cat logs/$TRIAL/result_stats_${source}_${control}.txt
 fi
+
+# ========================================================
+# 执行第7部分，探索连续控制
+if [ $PART -eq 7 ] || [ $PART -eq -1 ]; then
+    echo "执行第7部分，探索sentiment连续控制效果..."
+    TRIAL=sentiment-$TRIAN_MODEL
+    
+    # 首先进行固定采样，生成3k样本
+    echo "从10k样本中采样3k个固定样本..."
+    PYTHONPATH=. python data/prompts/sample_prompts.py \
+        --num_samples 3000 \
+        --input_file data/prompts/sentiment_prompts-10k/${source}_prompts.jsonl \
+        --output_file data/prompts/sentiment_prompts-10k/sampled_3k_${source}_prompts.jsonl \
+        --seed 42  # 使用固定种子确保可重复性
+    
+    # 使用不同的steer values对采样后的prompts进行生成
+    for steer_value in -3 -1 0 1 3; do
+        echo "使用 sentiment steer_value: $steer_value"
+        PYTHONPATH=. python experiments/training/generate.py \
+            --eval_file data/prompts/sentiment_prompts-10k/sampled_3k_${source}_prompts.jsonl \
+            --output_file logs/$TRIAL/predictions_continuous_3k_${steer_value}.jsonl \
+            --ckpt_name logs/$TRIAL/checkpoint.pt \
+            --model $TRIAN_MODEL --cuda \
+            --adaptor_class multiply --num_steers 2 --rank 1000 \
+            --max_length 256 --verbose --steer_values ${steer_value} 1 --top_p 0.9
+            
+        # 评估每个steer value的效果
+        python experiments/evaluation/evaluate2.py \
+            --generations_file logs/$TRIAL/predictions_continuous_3k_${steer_value}.jsonl \
+            --metrics sentiment,ppl-big,dist-n \
+            --output_file result_stats_continuous_3k_${steer_value}.txt
+        echo "Continuous sentiment control results (steer_value = ${steer_value}):"
+        cat logs/$TRIAL/result_stats_continuous_3k_${steer_value}.txt
+    done
+fi
+
+# ========================================================
+# 执行第8部分，探索组合效果
+if [ $PART -eq 8 ] || [ $PART -eq -1 ]; then
+    echo "执行第8部分，探索detoxification和sentiment的组合效果..."
+    TRIAL=combined-$TRIAN_MODEL
+    
+    # 探索不同组合的效果
+    for detox_value in -3 0 3; do
+        for sent_value in -3 0 3; do
+            echo "使用组合: detox=${detox_value}, sentiment=${sent_value}"
+            PYTHONPATH=. python experiments/training/generate.py \
+                --eval_file data/prompts/nontoxic_prompts-10k.jsonl \
+                --output_file logs/$TRIAL/predictions_detox${detox_value}_sent${sent_value}.jsonl \
+                --ckpt_name logs/$TRIAL/checkpoint.pt \
+                --model $TRIAN_MODEL --cuda \
+                --adaptor_class multiply --num_steers 4 --rank 1000 \
+                --max_length 256 --verbose --steer_values ${detox_value} 1 ${sent_value} 1
+                
+            # 评估每个组合的效果
+            python experiments/evaluation/evaluate2.py \
+                --generations_file logs/$TRIAL/predictions_detox${detox_value}_sent${sent_value}.jsonl \
+                --metrics toxicity,sentiment,ppl-big,dist-n \
+                --output_file result_stats_detox${detox_value}_sent${sent_value}.txt
+            echo "Combined control results (detox=${detox_value}, sentiment=${sent_value}):"
+            cat logs/$TRIAL/result_stats_detox${detox_value}_sent${sent_value}.txt
+        done
+    done
+fi
