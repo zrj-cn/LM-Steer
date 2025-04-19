@@ -5,19 +5,26 @@ import argparse
 import os
 
 def sample_prompts(input_file, output_file, num_samples, seed=None):
-    # 如果提供了种子，设置随机种子
     if seed is not None:
         random.seed(seed)
     
-    # 检查并创建输出目录
     output_dir = os.path.dirname(output_file)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         print(f"已创建目录：{output_dir}")
     
     # 读取所有提示
+    prompts = []
     with open(input_file, 'r', encoding='utf-8') as f:
-        prompts = [line for line in f]
+        for line in f:
+            if line.strip():  # 跳过空行
+                try:
+                    # 验证JSON格式
+                    json_obj = json.loads(line.strip())
+                    prompts.append(line.strip())
+                except json.JSONDecodeError:
+                    print(f"警告：跳过无效的JSON行")
+                    continue
     
     # 随机抽样
     if num_samples > len(prompts):
@@ -29,11 +36,9 @@ def sample_prompts(input_file, output_file, num_samples, seed=None):
     # 写入新文件
     with open(output_file, 'w', encoding='utf-8') as f:
         for i, prompt in enumerate(sampled_prompts):
-            if prompt.strip():  # 只写入非空行
-                if i < len(sampled_prompts) - 1:  # 如果不是最后一行
-                    f.write(prompt)
-                else:  # 如果是最后一行，确保不会多出空行
-                    f.write(prompt.rstrip('\n'))
+            f.write(prompt)
+            if i < len(sampled_prompts) - 1:
+                f.write('\n')
     
     print(f"已成功从 {input_file} 随机抽取 {len(sampled_prompts)} 个提示")
     print(f"结果已保存至 {output_file}")
