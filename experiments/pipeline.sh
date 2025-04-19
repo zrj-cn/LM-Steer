@@ -151,32 +151,35 @@ if [ $PART -eq 7 ] || [ $PART -eq -1 ]; then
     echo "执行第7部分，探索sentiment连续控制效果..."
     TRIAL=sentiment-$TRIAN_MODEL
     
-    # 首先进行固定采样，生成3k样本
-    echo "从10k样本中采样3k个固定样本..."
+    # 设置采样数量
+    SEN_SAMPLE_NUM=1000
+    
+    # 首先进行固定采样
+    echo "从10k样本中采样${SEN_SAMPLE_NUM}个固定样本..."
     PYTHONPATH=. python data/prompts/sample_prompts.py \
-        --num_samples 3000 \
+        --num_samples ${SEN_SAMPLE_NUM} \
         --input_file data/prompts/sentiment_prompts-10k/${source}_prompts.jsonl \
-        --output_file data/prompts/sentiment_prompts-10k/sampled_3k_${source}_prompts.jsonl \
-        --seed 42  # 使用固定种子确保可重复性
+        --output_file data/prompts/sentiment_prompts-10k/sampled_${SEN_SAMPLE_NUM}_${source}_prompts.jsonl \
+        --seed 42
     
     # 使用不同的steer values对采样后的prompts进行生成
     for steer_value in -5 -4 -3 -2 -1 0 1 2 3 4 5; do
         echo "使用 sentiment steer_value: $steer_value"
         PYTHONPATH=. python experiments/training/generate.py \
-            --eval_file data/prompts/sentiment_prompts-10k/sampled_3k_${source}_prompts.jsonl \
-            --output_file logs/$TRIAL/predictions_continuous_3k_${steer_value}.jsonl \
+            --eval_file data/prompts/sentiment_prompts-10k/sampled_${SEN_SAMPLE_NUM}_${source}_prompts.jsonl \
+            --output_file logs/$TRIAL/predictions_continuous_${SEN_SAMPLE_NUM}_${steer_value}.jsonl \
             --ckpt_name logs/$TRIAL/checkpoint.pt \
             --model $TRIAN_MODEL --cuda \
             --adaptor_class multiply --num_steers 2 --rank 1000 \
             --max_length 256 --verbose --steer_values ${steer_value} 1 --top_p 0.9
             
         # 评估每个steer value的效果
-        python experiments/evaluation/evaluate2.py \
-            --generations_file logs/$TRIAL/predictions_continuous_3k_${steer_value}.jsonl \
+        python experiments/evaluation/evaluate.py \
+            --generations_file logs/$TRIAL/predictions_continuous_${SEN_SAMPLE_NUM}_${steer_value}.jsonl \
             --metrics sentiment,ppl-big,dist-n \
-            --output_file result_stats_continuous_3k_${steer_value}.txt
+            --output_file result_stats_continuous_${SEN_SAMPLE_NUM}_${steer_value}.txt
         echo "Continuous sentiment control results (steer_value = ${steer_value}):"
-        cat logs/$TRIAL/result_stats_continuous_3k_${steer_value}.txt
+        cat logs/$TRIAL/result_stats_continuous_${SEN_SAMPLE_NUM}_${steer_value}.txt
     done
 fi
 
