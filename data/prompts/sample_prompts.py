@@ -4,7 +4,11 @@ import random
 import argparse
 import os
 
-def sample_prompts(input_file, output_file, num_samples):
+def sample_prompts(input_file, output_file, num_samples, seed=None):
+    # 如果提供了种子，设置随机种子
+    if seed is not None:
+        random.seed(seed)
+    
     # 检查并创建输出目录
     output_dir = os.path.dirname(output_file)
     if not os.path.exists(output_dir):
@@ -35,7 +39,8 @@ if __name__ == "__main__":
     parser.add_argument('--num_samples', type=int, required=True, help='要抽取的样本数量')
     parser.add_argument('--input_file', type=str, default='./data/prompts/nontoxic_prompts-10k.jsonl', help='输入文件名')
     parser.add_argument('--output_file', type=str, help='输出文件名')
+    parser.add_argument('--seed', type=int, help='随机种子')
     
     args = parser.parse_args()
     
-    sample_prompts(args.input_file, args.output_file, args.num_samples)
+    sample_prompts(args.input_file, args.output_file, args.num_samples, args.seed)
