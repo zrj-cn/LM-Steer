@@ -28,8 +28,12 @@ def sample_prompts(input_file, output_file, num_samples, seed=None):
     
     # 写入新文件
     with open(output_file, 'w', encoding='utf-8') as f:
-        for prompt in sampled_prompts:
-            f.write(prompt)
+        for i, prompt in enumerate(sampled_prompts):
+            if prompt.strip():  # 只写入非空行
+                if i < len(sampled_prompts) - 1:  # 如果不是最后一行
+                    f.write(prompt)
+                else:  # 如果是最后一行，确保不会多出空行
+                    f.write(prompt.rstrip('\n'))
     
     print(f"已成功从 {input_file} 随机抽取 {len(sampled_prompts)} 个提示")
     print(f"结果已保存至 {output_file}")
