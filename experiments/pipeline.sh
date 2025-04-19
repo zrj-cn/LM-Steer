@@ -189,12 +189,23 @@ if [ $PART -eq 8 ] || [ $PART -eq -1 ]; then
     echo "执行第8部分，探索detoxification和sentiment的组合效果..."
     TRIAL=combined-$TRIAN_MODEL
     
+    # 设置采样数量
+    COMB_SAMPLE_NUM=500
+    
+    # 首先进行固定采样
+    echo "从10k样本中采样${COMB_SAMPLE_NUM}个固定样本..."
+    PYTHONPATH=. python data/prompts/sample_prompts.py \
+        --num_samples ${COMB_SAMPLE_NUM} \
+        --input_file data/prompts/nontoxic_prompts-10k.jsonl \
+        --output_file data/prompts/nontoxic_prompts/sampled_${COMB_SAMPLE_NUM}_prompts.jsonl \
+        --seed 42
+    
     # 探索不同组合的效果
-    for detox_value in -3 0 3; do
-        for sent_value in -3 0 3; do
+    for detox_value in 0 1 2 3 4 5; do
+        for sent_value in -5 -3 -1 0 1 3 5; do
             echo "使用组合: detox=${detox_value}, sentiment=${sent_value}"
             PYTHONPATH=. python experiments/training/generate.py \
-                --eval_file data/prompts/nontoxic_prompts-10k.jsonl \
+                --eval_file data/prompts/nontoxic_prompts/sampled_${COMB_SAMPLE_NUM}_prompts.jsonl \
                 --output_file logs/$TRIAL/predictions_detox${detox_value}_sent${sent_value}.jsonl \
                 --ckpt_name logs/$TRIAL/checkpoint.pt \
                 --model $TRIAN_MODEL --cuda \
@@ -202,12 +213,14 @@ if [ $PART -eq 8 ] || [ $PART -eq -1 ]; then
                 --max_length 256 --verbose --steer_values ${detox_value} 1 ${sent_value} 1
                 
             # 评估每个组合的效果
-            python experiments/evaluation/evaluate2.py \
+            python experiments/evaluation/evaluate.py \
                 --generations_file logs/$TRIAL/predictions_detox${detox_value}_sent${sent_value}.jsonl \
-                --metrics toxicity,sentiment,ppl-big,dist-n \
+                --metrics sentiment,ppl-big,dist-n \
                 --output_file result_stats_detox${detox_value}_sent${sent_value}.txt
             echo "Combined control results (detox=${detox_value}, sentiment=${sent_value}):"
             cat logs/$TRIAL/result_stats_detox${detox_value}_sent${sent_value}.txt
         done
     done
 fi
+
+# toxicity,
