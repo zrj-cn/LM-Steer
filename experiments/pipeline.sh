@@ -189,10 +189,14 @@ if [ $PART -eq 8 ] || [ $PART -eq -1 ]; then
     echo "执行第8部分，探索detoxification和sentiment的组合效果..."
     TRIAL=combined-$TRIAN_MODEL
     
+    # 首先组合两个控制器
+    echo "组合detoxification和sentiment控制器..."
+    PYTHONPATH=. python lm_steer/combine_steers.py --model $TRIAN_MODEL
+    
     # 设置采样数量
     COMB_SAMPLE_NUM=500
     
-    # 首先进行固定采样
+    # 进行固定采样
     echo "从10k样本中采样${COMB_SAMPLE_NUM}个固定样本..."
     PYTHONPATH=. python data/prompts/sample_prompts.py \
         --num_samples ${COMB_SAMPLE_NUM} \
