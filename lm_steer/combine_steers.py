@@ -7,7 +7,6 @@ def combine_steers(model_name):
     sent_ckpt = torch.load(f'logs/sentiment-{model_name}/checkpoint.pt', weights_only=False)
 
     # 获取两个控制器的projector矩阵
-    # checkpoint是[Namespace, dict, rank]格式
     detox_proj1 = detox_ckpt[1]['projector1']
     detox_proj2 = detox_ckpt[1]['projector2']
     sent_proj1 = sent_ckpt[1]['projector1']
@@ -21,18 +20,19 @@ def combine_steers(model_name):
     combined_proj1 = torch.cat([detox_proj1, sent_proj1], dim=0)
     combined_proj2 = torch.cat([detox_proj2, sent_proj2], dim=0)
 
-    # 保存组合后的checkpoint
-    combined_ckpt = {
+    # 创建与原始checkpoint相同的格式
+    args = detox_ckpt[0]  # 使用detox的参数作为基础
+    args.num_steers = 4   # 更新为组合后的steers数量
+    
+    state_dict = {
         'projector1': combined_proj1,
-        'projector2': combined_proj2,
-        'config': {
-            'num_steers': 4,  # 2个控制器，每个控制器2个维度
-            'rank': detox_ckpt[2],  # 直接使用checkpoint中的rank
-            'adaptor_class': 'multiply'
-        }
+        'projector2': combined_proj2
     }
+    
+    rank = detox_ckpt[2]
 
-    # 保存组合后的模型
+    # 保存组合后的模型，保持与原始格式一致
+    combined_ckpt = [args, state_dict, rank]
     torch.save(combined_ckpt, f'logs/combined-{model_name}/checkpoint.pt')
 
 if __name__ == '__main__':
