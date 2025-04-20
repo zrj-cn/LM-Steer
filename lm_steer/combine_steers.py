@@ -12,23 +12,35 @@ def combine_steers(model_name):
         detox_proj1 = detox_ckpt['projector1']
         detox_proj2 = detox_ckpt['projector2']
     else:
-        # 如果是state_dict()保存的格式
+        # 如果是Namespace对象
         detox_state = detox_ckpt[0] if isinstance(detox_ckpt, list) else detox_ckpt
-        detox_proj1 = detox_state.get('projector1') or detox_state.get('state_dict', {}).get('projector1')
-        detox_proj2 = detox_state.get('projector2') or detox_state.get('state_dict', {}).get('projector2')
+        detox_proj1 = getattr(detox_state, 'projector1', None)
+        detox_proj2 = getattr(detox_state, 'projector2', None)
+        if detox_proj1 is None:
+            detox_state_dict = getattr(detox_state, 'state_dict', {})
+            detox_proj1 = detox_state_dict.get('projector1')
+            detox_proj2 = detox_state_dict.get('projector2')
 
     if isinstance(sent_ckpt, dict):
         sent_proj1 = sent_ckpt['projector1']
         sent_proj2 = sent_ckpt['projector2']
     else:
-        # 如果是state_dict()保存的格式
+        # 如果是Namespace对象
         sent_state = sent_ckpt[0] if isinstance(sent_ckpt, list) else sent_ckpt
-        sent_proj1 = sent_state.get('projector1') or sent_state.get('state_dict', {}).get('projector1')
-        sent_proj2 = sent_state.get('projector2') or sent_state.get('state_dict', {}).get('projector2')
+        sent_proj1 = getattr(sent_state, 'projector1', None)
+        sent_proj2 = getattr(sent_state, 'projector2', None)
+        if sent_proj1 is None:
+            sent_state_dict = getattr(sent_state, 'state_dict', {})
+            sent_proj1 = sent_state_dict.get('projector1')
+            sent_proj2 = sent_state_dict.get('projector2')
 
     # 打印调试信息
-    print("Detox projector shapes:", detox_proj1.shape, detox_proj2.shape)
-    print("Sentiment projector shapes:", sent_proj1.shape, sent_proj2.shape)
+    print("Detox checkpoint type:", type(detox_ckpt))
+    print("Sentiment checkpoint type:", type(sent_ckpt))
+    print("Detox projector shapes:", detox_proj1.shape if detox_proj1 is not None else None, 
+          detox_proj2.shape if detox_proj2 is not None else None)
+    print("Sentiment projector shapes:", sent_proj1.shape if sent_proj1 is not None else None, 
+          sent_proj2.shape if sent_proj2 is not None else None)
 
     # 拼接矩阵
     combined_proj1 = torch.cat([detox_proj1, sent_proj1], dim=0)
