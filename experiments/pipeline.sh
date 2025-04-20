@@ -227,4 +227,31 @@ if [ $PART -eq 8 ] || [ $PART -eq -1 ]; then
     done
 fi
 
+# ========================================================
+# 执行第9部分，对combine目录下的结果进行毒性测试
+if [ $PART -eq 9 ] || [ $PART -eq -1 ]; then
+    echo "执行第9部分，对combine目录下的结果进行毒性测试..."
+    TRIAL=combined-$TRIAN_MODEL
+    mkdir -p logs/$TRIAL
+    
+    # 遍历combine目录下的所有jsonl文件
+    for file in logs/$TRIAL/predictions_*.jsonl; do
+        if [ -f "$file" ]; then
+            echo "正在评估文件: $file"
+            # 获取不带路径的文件名
+            filename=$(basename "$file" .jsonl)
+            
+            # 评估毒性
+            python experiments/evaluation/evaluate.py \
+                --generations_file "$file" \
+                --metrics toxicity \
+                --output_file "${filename}.txt"
+            echo "评估结果已保存至: logs/$TRIAL/${filename}.txt"
+            echo "评估结果:"
+            cat "logs/$TRIAL/${filename}.txt"
+            echo "----------------------------------------"
+        fi
+    done
+fi
+
 # toxicity,
