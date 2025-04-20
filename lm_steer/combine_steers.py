@@ -3,8 +3,8 @@ import argparse
 
 def combine_steers(model_name):
     # 加载两个checkpoint
-    detox_ckpt = torch.load(f'logs/detoxification-{model_name}/checkpoint.pt')
-    sent_ckpt = torch.load(f'logs/sentiment-{model_name}/checkpoint.pt')
+    detox_ckpt = torch.load(f'logs/detoxification-{model_name}/checkpoint.pt', weights_only=False)
+    sent_ckpt = torch.load(f'logs/sentiment-{model_name}/checkpoint.pt', weights_only=False)
 
     # 获取两个控制器的projector矩阵
     detox_proj1 = detox_ckpt['projector1']
