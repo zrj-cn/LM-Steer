@@ -159,7 +159,7 @@ def toxicity_score(generations_df, perspective_file, perspective_rate_limit=5):
     
     API_KEY = os.getenv("GOOGLE_API_KEY")
     assert API_KEY is not None, "Please set the GOOGLE_API_KEY environment variable before proceeding"
-    request_semaphore = Semaphore(2)
+    request_semaphore = Semaphore(8)
     
     @backoff.on_exception(backoff.expo, requests.exceptions.RequestException, max_tries=5)
     def analyze_text(text):
