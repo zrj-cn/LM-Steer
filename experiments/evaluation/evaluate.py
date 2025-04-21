@@ -118,12 +118,14 @@ def toxicity_score(generations_df, perspective_file, perspective_rate_limit=5):
     import requests
     import backoff
     import time
+    import sys
     from concurrent.futures import ThreadPoolExecutor, as_completed
     from threading import Lock, Semaphore, Event
     from pynput import keyboard
     
-    # 创建暂停事件
+    # 创建暂停事件和停止事件
     pause_event = Event()
+    stop_event = Event()
     pause_event.set()  # 初始状态为运行
     
     def on_press(key):
@@ -142,6 +144,12 @@ def toxicity_score(generations_df, perspective_file, perspective_rate_limit=5):
                         if pause_event.is_set():
                             print("\n暂停处理... 按 Ctrl+Shift+J 继续")
                             pause_event.clear()
+                    # C 键终止进程
+                    elif key.char.lower() == 'c':
+                        print("\n正在终止进程...")
+                        stop_event.set()
+                        pause_event.set()
+                        sys.exit(1)  # 强制终止进程
         except AttributeError:
             pass
     
@@ -151,13 +159,15 @@ def toxicity_score(generations_df, perspective_file, perspective_rate_limit=5):
     
     API_KEY = os.getenv("GOOGLE_API_KEY")
     assert API_KEY is not None, "Please set the GOOGLE_API_KEY environment variable before proceeding"
-    # 将信号量限制改为2
     request_semaphore = Semaphore(2)
     
     @backoff.on_exception(backoff.expo, requests.exceptions.RequestException, max_tries=5)
     def analyze_text(text):
+        # 检查是否收到停止信号
+        if stop_event.is_set():
+            raise Exception("Received stop signal")
+            
         url = "https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze"
-        
         with request_semaphore:
             response = requests.post(url, 
                 params={"key": API_KEY},
@@ -167,7 +177,6 @@ def toxicity_score(generations_df, perspective_file, perspective_rate_limit=5):
                     "languages": ["en"]
                 }
             )
-        
         response.raise_for_status()
         return response.json()
 
@@ -179,13 +188,22 @@ def toxicity_score(generations_df, perspective_file, perspective_rate_limit=5):
     try:
         with ThreadPoolExecutor(max_workers=3) as executor:
             for i, row in tqdm(generations_df.iterrows(), total=len(generations_df.index)):
+                # 检查停止信号
+                if stop_event.is_set():
+                    print("\n收到停止信号，正在结束处理...")
+                    break
+                
                 # 检查暂停状态
-                while not pause_event.is_set():
+                while not pause_event.is_set() and not stop_event.is_set():
                     time.sleep(0.1)
                     continue
                 
                 generations = [gen['text'] for gen in row['generations']]
                 
+                # 如果已经收到停止信号，不再提交新的任务
+                if stop_event.is_set():
+                    break
+                    
                 future_to_text = {
                     executor.submit(analyze_text, text): text 
                     for text in generations
@@ -194,11 +212,19 @@ def toxicity_score(generations_df, perspective_file, perspective_rate_limit=5):
                 responses = []
                 for future in as_completed(future_to_text):
                     try:
+                        if stop_event.is_set():
+                            break
                         response = future.result()
                         responses.append(response)
                     except Exception as e:
+                        if stop_event.is_set():
+                            print("\n处理已停止")
+                            break
                         print(f"Error analyzing text: {e}")
                         responses.append(None)
+                
+                if stop_event.is_set():
+                    break
 
             # 其余处理逻辑保持不变
             json.dump({"responses": responses}, fout)
