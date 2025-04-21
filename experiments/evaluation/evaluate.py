@@ -163,7 +163,9 @@ def toxicity_score(generations_df, perspective_file, perspective_rate_limit=5):
     API_KEY = os.getenv("GOOGLE_API_KEY")
     assert API_KEY is not None, "Please set the GOOGLE_API_KEY environment variable before proceeding"
     # 增加并发数到20
-    request_semaphore = Semaphore(20)
+    request_semaphore = Semaphore(40)
+    last_request_time = time.time()
+    request_lock = Lock()
     
     @backoff.on_exception(backoff.expo, requests.exceptions.RequestException, max_tries=5)
     def analyze_text(text):
@@ -172,6 +174,14 @@ def toxicity_score(generations_df, perspective_file, perspective_rate_limit=5):
             
         url = "https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze"
         with request_semaphore:
+            nonlocal last_request_time
+            with request_lock:
+                current_time = time.time()
+                time_since_last = current_time - last_request_time
+                if time_since_last < 0.02:  # 动态调整延迟
+                    time.sleep(0.02 - time_since_last)
+                last_request_time = time.time()
+            
             response = requests.post(url, 
                 params={"key": API_KEY},
                 json={
@@ -180,8 +190,6 @@ def toxicity_score(generations_df, perspective_file, perspective_rate_limit=5):
                     "languages": ["en"]
                 }
             )
-            # 添加小延迟避免触发限流
-            time.sleep(0.05)
         response.raise_for_status()
         return response.json()
 
