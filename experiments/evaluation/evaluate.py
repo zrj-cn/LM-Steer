@@ -119,43 +119,46 @@ def toxicity_score(generations_df, perspective_file, perspective_rate_limit=5):
     import backoff
     import time
     import sys
+    import termios
+    import tty
     from concurrent.futures import ThreadPoolExecutor, as_completed
-    from threading import Lock, Semaphore, Event
-    from pynput import keyboard
+    from threading import Lock, Semaphore, Event, Thread
     
     # 创建暂停事件和停止事件
     pause_event = Event()
     stop_event = Event()
     pause_event.set()  # 初始状态为运行
     
-    def on_press(key):
+    def get_key():
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
         try:
-            # 检查是否按下了 Control 和 Shift
-            if hasattr(key, 'char'):  # 检查是否是字符键
-                if keyboard.Controller().pressed(keyboard.Key.ctrl) and \
-                   keyboard.Controller().pressed(keyboard.Key.shift):
-                    # J 键继续处理
-                    if key.char.lower() == 'j':
-                        if not pause_event.is_set():
-                            print("\n继续处理...")
-                            pause_event.set()
-                    # K 键暂停处理
-                    elif key.char.lower() == 'k':
-                        if pause_event.is_set():
-                            print("\n暂停处理... 按 Ctrl+Shift+J 继续")
-                            pause_event.clear()
-                    # C 键终止进程
-                    elif key.char.lower() == 'c':
-                        print("\n正在终止进程...")
-                        stop_event.set()
-                        pause_event.set()
-                        sys.exit(1)  # 强制终止进程
-        except AttributeError:
-            pass
+            tty.setraw(sys.stdin.fileno())
+            ch = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch
     
-    # 启动键盘监听
-    listener = keyboard.Listener(on_press=on_press)
-    listener.start()
+    def key_listener():
+        while True:
+            key = get_key()
+            if key == '\x13':  # Ctrl+S
+                if pause_event.is_set():
+                    print("\n暂停处理... 按 Ctrl+A 继续")
+                    pause_event.clear()
+            elif key == '\x01':  # Ctrl+A
+                if not pause_event.is_set():
+                    print("\n继续处理...")
+                    pause_event.set()
+            elif key == '\x03':  # Ctrl+C
+                print("\n正在终止进程...")
+                stop_event.set()
+                pause_event.set()
+                sys.exit(1)
+    
+    # 启动键盘监听线程
+    listener_thread = Thread(target=key_listener, daemon=True)
+    listener_thread.start()
     
     API_KEY = os.getenv("GOOGLE_API_KEY")
     assert API_KEY is not None, "Please set the GOOGLE_API_KEY environment variable before proceeding"
@@ -216,6 +219,9 @@ def toxicity_score(generations_df, perspective_file, perspective_rate_limit=5):
                             break
                         response = future.result()
                         responses.append(response)
+                        # 实时写入每个响应
+                        json.dump(response, fout)
+                        fout.write("\n")
                     except Exception as e:
                         if stop_event.is_set():
                             print("\n处理已停止")
@@ -226,9 +232,10 @@ def toxicity_score(generations_df, perspective_file, perspective_rate_limit=5):
                 if stop_event.is_set():
                     break
 
-            # 其余处理逻辑保持不变
-            json.dump({"responses": responses}, fout)
-            fout.write("\n")
+            # 删除原来的批量写入部分
+            # for response in responses:
+            #     json.dump(response, fout)
+            #     fout.write("\n")
             
             # Calculate scores
             scores = []
