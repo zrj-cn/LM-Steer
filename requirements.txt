@@ -9,3 +9,4 @@ kaggle
 matplotlib
 hf_xet
 google-api-python-client
+pynput # for keyboard
