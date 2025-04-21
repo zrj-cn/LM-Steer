@@ -189,23 +189,25 @@ if [ $PART -eq 8 ] || [ $PART -eq -1 ]; then
     echo "执行第8部分，探索detoxification和sentiment的组合效果..."
     TRIAL=combined-$TRIAN_MODEL
     
-    # 首先组合两个控制器
-    echo "组合detoxification和sentiment控制器..."
-    PYTHONPATH=. python lm_steer/combine_steers.py --model $TRIAN_MODEL
+    # # 首先组合两个控制器
+    # echo "组合detoxification和sentiment控制器..."
+    # PYTHONPATH=. python lm_steer/combine_steers.py --model $TRIAN_MODEL
     
     # 设置采样数量
     COMB_SAMPLE_NUM=500
     
-    # 进行固定采样
-    echo "从10k样本中采样${COMB_SAMPLE_NUM}个固定样本..."
-    PYTHONPATH=. python data/prompts/sample_prompts.py \
-        --num_samples ${COMB_SAMPLE_NUM} \
-        --input_file data/prompts/nontoxic_prompts-10k.jsonl \
-        --output_file data/prompts/nontoxic_prompts/sampled_${COMB_SAMPLE_NUM}_prompts.jsonl \
-        --seed 42
-    
+    # # 进行固定采样
+    # echo "从10k样本中采样${COMB_SAMPLE_NUM}个固定样本..."
+    # PYTHONPATH=. python data/prompts/sample_prompts.py \
+    #     --num_samples ${COMB_SAMPLE_NUM} \
+    #     --input_file data/prompts/nontoxic_prompts-10k.jsonl \
+    #     --output_file data/prompts/nontoxic_prompts/sampled_${COMB_SAMPLE_NUM}_prompts.jsonl \
+    #     --seed 42
+
+    # de = 3 ,sen = 5还没有跑出来
+
     # 探索不同组合的效果
-    for detox_value in 0 1 2 3 4 5; do
+    for detox_value in 4 5; do
         for sent_value in -5 -3 -1 0 1 3 5; do
             echo "使用组合: detox=${detox_value}, sentiment=${sent_value}"
             PYTHONPATH=. python experiments/training/generate.py \
