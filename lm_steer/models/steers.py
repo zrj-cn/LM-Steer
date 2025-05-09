@@ -48,11 +48,16 @@ class Projected_Adaptor(nn.Module):
             steer_values = self.steer_values
             if steer_values.dim() == 1:
                 steer_values = steer_values.unsqueeze(0).expand(batch_size, -1)
-            delta = state[:, None].matmul(self.projector1[None]) *\
-                steer_values[:, :, None, None]
-                # self.steer_values[:, :, None, None]
-            delta = delta.matmul(
-                self.projector2.transpose(1, 2)[None]).sum(1)
+            # delta = state[:, None].matmul(self.projector1[None]) *\
+            #     steer_values[:, :, None, None]
+            #     # self.steer_values[:, :, None, None]
+            # delta = delta.matmul(
+            #     self.projector2.transpose(1, 2)[None]).sum(1)
+            # 使用einsum实现高效的批量矩阵乘法
+            delta = torch.einsum('be,ser->bsr', state, self.projector1)  # [batch, steer, rank]
+            delta = delta * steer_values[:, :, None]  # [batch, steer, rank]
+            delta = torch.einsum('bsr,ser->bse', delta, self.projector2)  # [batch, steer, embed_dim]
+            delta = delta.sum(1)  # [batch, embed_dim]
             projected_state = state + self.epsilon * delta
             logits = projected_state.matmul(
                 self.lm_head.weight.detach().transpose(0, 1))
