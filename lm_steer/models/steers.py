@@ -44,20 +44,24 @@ class Projected_Adaptor(nn.Module):
         if self.adaptor_class == "multiply":
             batch_size = state.shape[0]
             # 保证 steer_values 形状为 [batch_size, num_steers]
-            # 这里进行了修改
             steer_values = self.steer_values
             if steer_values.dim() == 1:
                 steer_values = steer_values.unsqueeze(0).expand(batch_size, -1)
-            # delta = state[:, None].matmul(self.projector1[None]) *\
-            #     steer_values[:, :, None, None]
-            #     # self.steer_values[:, :, None, None]
-            # delta = delta.matmul(
-            #     self.projector2.transpose(1, 2)[None]).sum(1)
+            
             # 使用einsum实现高效的批量矩阵乘法
-            delta = torch.einsum('be,ser->bsr', state, self.projector1)  # [batch, steer, rank]
-            delta = delta * steer_values[:, :, None]  # [batch, steer, rank]
-            delta = torch.einsum('bsr,ser->bse', delta, self.projector2)  # [batch, steer, embed_dim]
-            delta = delta.sum(1)  # [batch, embed_dim]
+            # state: [B, E], self.projector1: [S, E, R] -> delta_p1: [B, S, R]
+            delta_p1 = torch.einsum('be,ser->bsr', state, self.projector1)
+            
+            # steer_values: [B, S] -> steer_values[:, :, None]: [B, S, 1]
+            # delta_p1: [B, S, R] * steer_values_expanded: [B, S, 1] -> delta_steered: [B, S, R]
+            delta_steered = delta_p1 * steer_values[:, :, None]
+            
+            # delta_steered: [B, S, R], self.projector2.transpose(1,2): [S, R, E] -> delta_final_bse: [B, S, E]
+            delta_final_bse = torch.einsum('bsr,sre->bse', delta_steered, self.projector2.transpose(1,2))
+            
+            # delta_final_bse: [B, S, E] -> sum over S dimension -> delta: [B, E]
+            delta = delta_final_bse.sum(dim=1)
+            
             projected_state = state + self.epsilon * delta
             logits = projected_state.matmul(
                 self.lm_head.weight.detach().transpose(0, 1))
