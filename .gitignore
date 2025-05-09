@@ -165,6 +165,8 @@ _logs
 _logs/
 checkpoints/
 jigsaw-unintended-bias-in-toxicity-classification.zip
+combined-gpt2-large.zip
+gitup.sh
 data/toxicity/jigsaw-unintended-bias-in-toxicity-classification/
 assets/poster.pdf
 assets/slides.pdf
