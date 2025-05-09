@@ -42,8 +42,15 @@ class Projected_Adaptor(nn.Module):
             return state.matmul(
                 self.lm_head.weight.detach().transpose(0, 1))
         if self.adaptor_class == "multiply":
+            batch_size = state.shape[0]
+            # 保证 steer_values 形状为 [batch_size, num_steers]
+            # 这里进行了修改
+            steer_values = self.steer_values
+            if steer_values.dim() == 1:
+                steer_values = steer_values.unsqueeze(0).expand(batch_size, -1)
             delta = state[:, None].matmul(self.projector1[None]) *\
-                self.steer_values[:, :, None, None]
+                steer_values[:, :, None, None]
+                # self.steer_values[:, :, None, None]
             delta = delta.matmul(
                 self.projector2.transpose(1, 2)[None]).sum(1)
             projected_state = state + self.epsilon * delta
