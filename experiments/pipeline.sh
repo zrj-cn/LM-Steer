@@ -163,7 +163,7 @@ if [ $PART -eq 7 ] || [ $PART -eq -1 ]; then
         --seed 42
     
     # 使用不同的steer values对采样后的prompts进行生成
-    for steer_value in -5 -4 -3 -2 -1 0 1 2 3 4 5; do
+    for steer_value in -4; do
         echo "使用 sentiment steer_value: $steer_value"
         PYTHONPATH=. python experiments/training/generate.py \
             --eval_file data/prompts/sentiment_prompts-10k/sampled_${SEN_SAMPLE_NUM}_${source}_prompts.jsonl \
@@ -207,8 +207,8 @@ if [ $PART -eq 8 ] || [ $PART -eq -1 ]; then
     # de = 3 ,sen = 5还没有跑出来
 
     # 探索不同组合的效果
-    for detox_value in 4 5; do
-        for sent_value in -5 -3 -1 0 1 3 5; do
+    for detox_value in 3; do
+        for sent_value in 5; do
             echo "使用组合: detox=${detox_value}, sentiment=${sent_value}"
             PYTHONPATH=. python experiments/training/generate.py \
                 --eval_file data/prompts/nontoxic_prompts/sampled_${COMB_SAMPLE_NUM}_prompts.jsonl \
