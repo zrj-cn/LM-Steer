@@ -81,6 +81,11 @@ class Projected_Adaptor(nn.Module):
             #    如果 self.steer_values 是一维的 [S]，那么 self.steer_values[:, :, None, None] 会变成 [S, 1, 1, 1]。
             #    这可能与前一步 matmul 的结果维度不匹配，或者没有正确地按批次和控制方向应用 steer_values。
             #    下方被注释掉的一行 "# steer_values[:, :, None, None]" 本来是想用调整后的 steer_values。
+
+            print("state[:, None].shape:", state[:, None].shape)  # 打印 state[:, None] 的形状
+            print("self.projector1[None].shape:", self.projector1[None].shape)  # 打印 self.projector1[None] 的形状
+            # print("delta.shape:", delta.shape)  # 打印 delta 的形状
+            print("self.steer_values[:, :, None, None].shape:", self.steer_values[:, :, None, None].shape)  # 打印 self.steer_values[:, :, None, None] 的形状
             delta = state[:, None].matmul(self.projector1[None]) *\
                 self.steer_values[:, :, None, None] 
                 # steer_values[:, :, None, None]  self.steer_values[:, :, None, None]# 这是被注释掉的行，本意可能是使用修正后的 steer_values
