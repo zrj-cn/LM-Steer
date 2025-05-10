@@ -129,12 +129,12 @@ def main():
     model_name = col1.selectbox(
         "Select a model to steer",
         [
-            "gpt2",
-            "gpt2-medium",
+            # "gpt2",
+            # "gpt2-medium",
             "gpt2-large",
-            "EleutherAI/pythia-70m",
-            "EleutherAI/pythia-160m",
-            "EleutherAI/pythia-410m",
+            # "EleutherAI/pythia-70m",
+            # "EleutherAI/pythia-160m",
+            # "EleutherAI/pythia-410m",
             # "EleutherAI/pythia-1b",
             # "EleutherAI/pythia-1.4b",
             # "EleutherAI/pythia-2.8b",
