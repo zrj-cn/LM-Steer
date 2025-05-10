@@ -50,7 +50,6 @@ class Projected_Adaptor(nn.Module):
 
             # 将 self.steer_values 赋值给局部变量 steer_values
             steer_values = self.steer_values 
-            print("steer_values.shape:", steer_values.shape)  # 打印 steer_values 的形状
 
             
             # 检查 steer_values 是否是一维的
@@ -58,16 +57,11 @@ class Projected_Adaptor(nn.Module):
                 # 使其形状变为 [batch_size, num_steers]
                 steer_values = steer_values.unsqueeze(0).expand(batch_size, -1)
 
-            print("steer_values.shape:", steer_values.shape)  # 打印 steer_values 的形状
             # 检查 steer_values 的形状是否与预期相符
             if steer_values.shape != (batch_size, self.num_steers):
                 raise ValueError(f"steer_values should have shape [batch_size, num_steers], "
                                  f"but got {steer_values.shape}")
             # 计算 delta 的第一部分：
-            print("state[:, None].shape:", state[:, None].shape)  # 打印 state[:, None] 的形状
-            print("self.projector1[None].shape:", self.projector1[None].shape)  # 打印 self.projector1[None] 的形状
-            # print("delta.shape:", delta.shape)  # 打印 delta 的形状
-            print("self.steer_values[:, :, None, None].shape:", self.steer_values[:, :, None, None].shape)  # 打印 self.steer_values[:, :, None, None] 的形状
             delta = state[:, None].matmul(self.projector1[None]) *\
                 self.steer_values[:, :, None, None] 
             
