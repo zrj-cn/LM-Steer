@@ -19,7 +19,8 @@ def st_get_model(model_name, low_resource_mode):
         1000, 1e-3, 1e-2, low_resource_mode
     )
     model.to_device(device)
-    ckpt = torch.load(f"checkpoints/{model_name}.pt", map_location=device)
+    # 修改下面这一行
+    ckpt = torch.load(f"checkpoints/{model_name}.pt", map_location=device, weights_only=False)
     model.load_state_dict(ckpt[1])
     return model, tokenizer
 
@@ -91,7 +92,8 @@ def main():
     Language Models**"](https://arxiv.org/abs/2305.12798) (**ACL 2024
     Outstanding Paper Award**) by Chi Han, Jialiang Xu, Manling Li, Yi Fung,
     Chenkai Sun, Nan Jiang, Tarek Abdelzaher, Heng Ji. GitHub repository:
-    https://github.com/Glaciohound/LM-Steer.
+    https://github.com/Glaciohound/LM-Steer.\n
+    This demo is modified by Rujie Zheng, Zhiye He, Jiabin Qiu, Jiahao Vegetable
     '''
     st.subheader("Overview")
     col1, col2, col3 = st.columns([1, 5, 1])
@@ -280,7 +282,17 @@ def main():
     '''
     for dimension, color in zip(dimension_names, dimension_colors):
         f'##### {dimension} Word Dimensions'
-        dim = 2 if dimension == "Sentiment" else 0
+        # Original: dim = 2 if dimension == "Sentiment" else 0
+        # Corrected:
+        if dimension == "Sentiment":
+            dim = 1  # Changed from 2 to 1
+        elif dimension == "Detoxification":
+            dim = 0
+        else:
+            # This case should ideally not be reached with the current dimension_names
+            st.error(f"Unknown dimension encountered: {dimension}")
+            continue # Skip analysis for unknown dimension
+        
         analysis_result, D = word_embedding_space_analysis(
             model_name, dim)
         with st.expander("Show the analysis results"):
