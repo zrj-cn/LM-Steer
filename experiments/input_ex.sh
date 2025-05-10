@@ -44,7 +44,7 @@ if [ $PART -eq 6 ] || [ $PART -eq -1 ]; then
     TRIAL=input-sentiment-$TRIAN_MODEL
     
     # 设置采样数量
-    SEN_SAMPLE_NUM=500
+    SEN_SAMPLE_NUM=50
     
     # 首先进行固定采样
     echo "从10k样本中采样${SEN_SAMPLE_NUM}个固定样本..."
