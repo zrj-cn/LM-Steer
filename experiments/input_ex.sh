@@ -22,7 +22,7 @@ if [ $PART -eq 4 ] || [ $PART -eq -1 ]; then
         --adaptor_class multiply --num_steers 2 --dummy_steer 1 --rank 1000 \
         --batch_size 32 --max_length 256 \
         --n_steps 1000 --lr 1e-2 --regularization 1e-6 --epsilon 1e-3 \
-        --adapted_component input_embedding
+        # --adapted_component input_embedding
 fi
 
 # # ========================================================

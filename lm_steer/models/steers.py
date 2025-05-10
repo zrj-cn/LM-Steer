@@ -42,22 +42,20 @@ class Projected_Adaptor(nn.Module):
             return state.matmul(
                 self.lm_head.weight.detach().transpose(0, 1))
         if self.adaptor_class == "multiply":
-            # 获取输入 state 的批量大小 (batch_size)
+            # 这是为了确保后续的矩阵乘法操作能够正确进行
+            if self.position == "input":
+                state = self.lm_head(state)
+            # 获取 state 的批次大小
             batch_size = state.shape[0]
-            print("batch_size:", batch_size)  # 打印 batch_size 的值
-            print("self.projector1.shape:", self.projector1.shape)  # 打印 self.projector1 的形状
-            print("self.projector2.shape:", self.projector2.shape)  # 打印 self.projector2 的形状
-            print("state.shape:", state.shape)  # 打印 state 的形状
 
             # 将 self.steer_values 赋值给局部变量 steer_values
             steer_values = self.steer_values 
             print("steer_values.shape:", steer_values.shape)  # 打印 steer_values 的形状
+
             
             # 检查 steer_values 是否是一维的
             if steer_values.dim() == 1:
-                # 如果是一维的，则增加一个维度并扩展，
                 # 使其形状变为 [batch_size, num_steers]
-                # 这样每个样本都有其对应的 steer_values
                 steer_values = steer_values.unsqueeze(0).expand(batch_size, -1)
 
             print("steer_values.shape:", steer_values.shape)  # 打印 steer_values 的形状
@@ -65,40 +63,17 @@ class Projected_Adaptor(nn.Module):
             if steer_values.shape != (batch_size, self.num_steers):
                 raise ValueError(f"steer_values should have shape [batch_size, num_steers], "
                                  f"but got {steer_values.shape}")
-
-        
-            
             # 计算 delta 的第一部分：
-            # 1. state[:, None]: 将 state (形状通常为 [B, E]) 变形为 [B, 1, E]
-            #    B: batch_size, E: embed_dim
-            # 2. self.projector1[None]: 将 self.projector1 (形状通常为 [S, E, R]) 变形为 [1, S, E, R]
-            #    S: num_steers, R: rank
-            # 3. matmul(...): 执行矩阵乘法。这一步的维度操作比较复杂，
-            #    根据之前的报错历史，这里的 matmul 可能是维度不匹配的根源。
-            #    PyTorch 对高维张量的 matmul 有特定规则，需要仔细匹配维度。
-            # 4. * self.steer_values[:, :, None, None]: 逐元素乘以 self.steer_values。
-            #    注意：这里使用的是 self.steer_values，而不是上面可能被调整过形状的局部变量 steer_values。
-            #    如果 self.steer_values 是一维的 [S]，那么 self.steer_values[:, :, None, None] 会变成 [S, 1, 1, 1]。
-            #    这可能与前一步 matmul 的结果维度不匹配，或者没有正确地按批次和控制方向应用 steer_values。
-            #    下方被注释掉的一行 "# steer_values[:, :, None, None]" 本来是想用调整后的 steer_values。
-
             print("state[:, None].shape:", state[:, None].shape)  # 打印 state[:, None] 的形状
             print("self.projector1[None].shape:", self.projector1[None].shape)  # 打印 self.projector1[None] 的形状
             # print("delta.shape:", delta.shape)  # 打印 delta 的形状
             print("self.steer_values[:, :, None, None].shape:", self.steer_values[:, :, None, None].shape)  # 打印 self.steer_values[:, :, None, None] 的形状
             delta = state[:, None].matmul(self.projector1[None]) *\
                 self.steer_values[:, :, None, None] 
-                # steer_values[:, :, None, None]  self.steer_values[:, :, None, None]# 这是被注释掉的行，本意可能是使用修正后的 steer_values
             
-            # 计算 delta 的第二部分：
-            # 1. self.projector2.transpose(1, 2): 将 self.projector2 (形状 [S, E, R]) 转置为 [S, R, E]
-            # 2. [None]: 增加一个维度，变为 [1, S, R, E]
-            # 3. delta.matmul(...): 将上一步得到的 delta 与处理后的 self.projector2 进行矩阵乘法。
-            # 4. .sum(1): 沿着第二个维度（通常是 num_steers 维度）求和。
             delta = delta.matmul(
                 self.projector2.transpose(1, 2)[None]).sum(1)
-            
-            # 注释提示曾考虑或尝试使用 einsum 来实现，einsum 对于复杂的多维张量运算通常更清晰且不易出错。
+
             # projected_state 的计算：将原始 state 加上经过 epsilon 缩放的 delta
             projected_state = state + self.epsilon * delta
             

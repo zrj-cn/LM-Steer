@@ -34,6 +34,8 @@ class Switching_GPTNeoModel(LMSteerBase):
                 vocab_size, rank, epsilon, init_var, "output")
             self.model.set_output_embeddings(self.steer)
         elif adapted_component == "input_embedding":
+            embed_dim = self.model.transformer.wte.weight.shape[1]
+            vocab_size = self.model.transformer.wte.weight.shape[0]
             self.steer = Projected_Adaptor(
                 self.model.transformer.wte, adaptor_class, num_steers,
                 embed_dim, vocab_size, rank, epsilon, init_var, "input")
