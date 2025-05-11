@@ -73,7 +73,7 @@ if [ $PART -eq 7 ] || [ $PART -eq -1 ]; then
     #     --seed 42
     
     # 使用不同的steer values对采样后的prompts进行生成
-    for steer_value in -5 -4 -3 -2 -1 0 1 2 3 4 5; do
+    for steer_value in 4 5; do
         echo "使用 sentiment steer_value: $steer_value"
         PYTHONPATH=. python experiments/training/generate.py \
             --eval_file data/prompts/sentiment_prompts-10k/sampled_${SEN_SAMPLE_NUM}_${source}_prompts.jsonl \
