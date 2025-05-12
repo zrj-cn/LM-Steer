@@ -2,9 +2,9 @@ import os
 import re
 import csv
 
-DIR = "../logs/sentiment-gpt2-large"
+DIR = "../logs/input-sentiment-gpt2-large-except-pt"
 MODEL_NAME = "gpt2-large"
-OUTPUT_CSV = "../logs/csv_data/continual.csv"
+OUTPUT_CSV = "../logs/csv_data/input_sentiment_continual.csv"
 
 FIELDS = [
     "model",
